@@ -42,38 +42,42 @@ defmodule RinhaBankWeb.Services.ClientService do
         end
       end)
 
-    case transaction do
-      {:ok, _} ->
-        Logger.info("Transaction created with successfully")
-        {:ok, Client.get_by_id(id) }
-      {:error, _} ->
-        {:error, "Transaction not created"}
-    end
+    mapper_transaction_result(transaction)
   end
+end
 
+defp increase_balance(%{
+       "valor" => valor,
+       "id" => client_id
+     }) do
+  client = Client.get_by_id(client_id)
+  new_balance = client.saldo + valor
+  Logger.info("Client #{inspect(client)} || New balance: #{new_balance}")
+  Client.update_balance(client, new_balance)
+end
 
-  defp increase_balance(%{
-         "valor" => valor,
-         "id" => client_id
-       }) do
-    client = Client.get_by_id(client_id)
-    new_balance = client.saldo + valor
-    Logger.info("Client #{inspect(client)} || New balance: #{new_balance}")
-    Client.update_balance(client, new_balance)
-  end
+defp insert_transaction(%{
+       "valor" => valor,
+       "id" => id,
+       "descricao" => descricao,
+       "tipo" => tipo
+     }) do
+  %{
+    valor: valor,
+    tipo: tipo,
+    descricao: descricao,
+    cliente_id: id
+  }
+  |> Transaction.create()
+end
 
-  defp insert_transaction(%{
-         "valor" => valor,
-         "id" => id,
-         "descricao" => descricao,
-         "tipo" => tipo
-       }) do
-    %{
-      valor: valor,
-      tipo: tipo,
-      descricao: descricao,
-      cliente_id: id
-    }
-    |> Transaction.create()
+defp mapper_transaction_result(transaction) do
+  case transaction do
+    {:ok, _} ->
+      Logger.info("Transaction created with successfully")
+      {:ok, Client.get_by_id(id)}
+
+    {:error, _} ->
+      {:error, "Transaction not created"}
   end
 end

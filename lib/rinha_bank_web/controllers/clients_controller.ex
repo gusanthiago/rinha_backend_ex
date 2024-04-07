@@ -7,11 +7,22 @@ defmodule RinhaBankWeb.ClientsController do
   def create_transaction(conn, params) do
     Logger.info("Creating transaction with params: #{inspect(params)}")
 
-    response = ClientService.create_transaction(params)
+    case ClientService.create_transaction(params) do
+      {:ok, client} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          saldo: client.saldo,
+          limite: client.limite
+        })
 
-    conn
-    |> put_status(:ok)
-    |> json(response)
+      {:error, error} ->
+        Logger.info("Error to create transaction: #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: error})
+    end
   end
 
   def show_transaction(conn, params) do

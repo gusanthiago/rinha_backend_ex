@@ -5,8 +5,11 @@ defmodule RinhaBankWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", RinhaBankWeb do
+  scope "/", RinhaBankWeb do
     pipe_through :api
+    post("/clientes/:id/transacoes", ClientsController, :create_transaction)
+    get("/clientes/:id/transacoes", ClientsController, :show_transaction)
+    get("/clientes/:id/extrato", ClientsController, :show_statements)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

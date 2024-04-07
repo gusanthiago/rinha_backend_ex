@@ -6,78 +6,87 @@ defmodule RinhaBankWeb.Services.ClientService do
 
   def create_transaction(
         %{
-          "tipo" => tipo
+          "id" => client_id
         } = params
       ) do
-    case tipo do
-      "c" -> deposit(params)
-      _ -> {:error, "Invalid transaction type"}
-    end
-  end
-
-  defp deposit(
-         %{
-           "id" => id
-         } = params
-       ) do
-    transaction =
+    {:ok, transaction} =
       Repo.transaction(fn ->
-        case increase_balance(params) do
+        client = Client.get_by_id(client_id)
+
+        case change_balance(params, client) do
           {:ok, client} ->
             Logger.info("Client balance updated: #{inspect(client)}, inserting transaction ...")
 
             case insert_transaction(params) do
               {:ok, transaction} ->
                 Logger.info("Transaction inserted with successfully #{inspect(transaction)}")
-                transaction
+                {:ok, transaction}
 
               {:error, error} ->
-                Logger.info("Transaction not created, rolling back ... #{inspect(error)}")
+                Logger.warning("Transaction not created, rolling back ... #{inspect(error)}")
                 Repo.rollback(:failed_transaction)
                 {:error, "Transaction not created"}
             end
 
-          {:error, _} ->
+          {:error, error} ->
             Logger.info("Error to update client balance")
+            {:error, error}
         end
       end)
 
-    mapper_transaction_result(transaction)
+    mapper_transaction_result(transaction, client_id)
   end
-end
 
-defp increase_balance(%{
-       "valor" => valor,
-       "id" => client_id
-     }) do
-  client = Client.get_by_id(client_id)
-  new_balance = client.saldo + valor
-  Logger.info("Client #{inspect(client)} || New balance: #{new_balance}")
-  Client.update_balance(client, new_balance)
-end
+  defp change_balance(
+         %{
+           "valor" => valor,
+           "tipo" => "c"
+         },
+         client
+       ) do
+    new_balance = client.saldo + valor
+    Client.update_balance(client, new_balance)
+  end
 
-defp insert_transaction(%{
-       "valor" => valor,
-       "id" => id,
-       "descricao" => descricao,
-       "tipo" => tipo
-     }) do
-  %{
-    valor: valor,
-    tipo: tipo,
-    descricao: descricao,
-    cliente_id: id
-  }
-  |> Transaction.create()
-end
+  defp change_balance(
+         %{
+           "valor" => valor,
+           "tipo" => "d"
+         },
+         client
+       ) do
+    new_balance = client.saldo - valor
 
-defp mapper_transaction_result(transaction) do
-  case transaction do
-    {:ok, _} ->
-      Logger.info("Transaction created with successfully")
-      {:ok, Client.get_by_id(id)}
+    if new_balance < 0 and new_balance * -1 > client.limite do
+      {:error, :insuficient_funds}
+    else
+      Client.update_balance(client, new_balance)
+    end
+  end
 
-    {:error, _} ->
-      {:error, "Transaction not created"}
+  defp insert_transaction(%{
+         "valor" => valor,
+         "id" => id,
+         "descricao" => descricao,
+         "tipo" => tipo
+       }) do
+    %{
+      valor: valor,
+      tipo: tipo,
+      descricao: descricao,
+      cliente_id: id
+    }
+    |> Transaction.create()
+  end
+
+  defp mapper_transaction_result(transaction, client_id) do
+    case transaction do
+      {:ok, _} ->
+        Logger.info("Transaction created with successfully")
+        {:ok, Client.get_by_id(client_id)}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

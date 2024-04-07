@@ -16,6 +16,11 @@ defmodule RinhaBankWeb.ClientsController do
           limite: client.limite
         })
 
+      {:error, :insuficient_funds} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Insuficient funds"})
+
       {:error, error} ->
         Logger.info("Error to create transaction: #{inspect(error)}")
 

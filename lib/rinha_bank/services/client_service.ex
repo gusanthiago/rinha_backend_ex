@@ -89,4 +89,38 @@ defmodule RinhaBankWeb.Services.ClientService do
         {:error, error}
     end
   end
+
+  def show_last_statements(%{"id" => client_id}) do
+    case Client.get_by_id(client_id) do
+      nil ->
+        Logger.info("Error to get client:")
+        {:error, :user_not_found}
+
+      client ->
+        last_transactions = Transaction.get_last_transactions(client_id, 10)
+        {:ok, mapper_last_statements(client, last_transactions)}
+    end
+  end
+
+  defp mapper_last_statements(client, last_transactions) do
+    last_transactions =
+      last_transactions
+      |> Enum.map(fn transaction ->
+        %{
+          valor: transaction.valor,
+          tipo: transaction.tipo,
+          descricao: transaction.descricao,
+          realizada_em: transaction.realizada_em
+        }
+      end)
+
+    %{
+      saldo: %{
+        total: client.saldo,
+        data_extrato: DateTime.utc_now(),
+        limite: client.limite
+      },
+      ultimas_transacoes: last_transactions
+    }
+  end
 end

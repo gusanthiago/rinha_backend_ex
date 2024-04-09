@@ -38,11 +38,26 @@ defmodule RinhaBankWeb.ClientsController do
     |> json(%{})
   end
 
-  def show_statements(conn, params) do
+  def show_last_statements(conn, params) do
     Logger.info("Show statements with params: #{inspect(params)}")
 
-    conn
-    |> put_status(:ok)
-    |> json(%{})
+    case ClientService.show_last_statements(params) do
+      {:ok, statements} ->
+        conn
+        |> put_status(:ok)
+        |> json(statements)
+
+      {:error, :user_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "User not found"})
+
+      {:error, error} ->
+        Logger.info("Error to show statements: #{inspect(error)}")
+
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Internal server error"})
+    end
   end
 end

@@ -1,4 +1,4 @@
-defmodule RinhaBankWeb.ClientsController do
+defmodule RinhaBankWeb.ClientController do
   require Logger
   use RinhaBankWeb, :controller
 
@@ -28,14 +28,6 @@ defmodule RinhaBankWeb.ClientsController do
         |> put_status(:unprocessable_entity)
         |> json(%{error: error})
     end
-  end
-
-  def show_transaction(conn, params) do
-    Logger.info("show transaction with: #{inspect(params)}")
-
-    conn
-    |> put_status(:ok)
-    |> json(%{})
   end
 
   def show_last_statements(conn, params) do

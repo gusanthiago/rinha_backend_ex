@@ -7,9 +7,8 @@ defmodule RinhaBankWeb.Router do
 
   scope "/", RinhaBankWeb do
     pipe_through :api
-    post("/clientes/:id/transacoes", ClientsController, :create_transaction)
-    get("/clientes/:id/transacoes", ClientsController, :show_transaction)
-    get("/clientes/:id/extrato", ClientsController, :show_statements)
+    post("/clientes/:id/transacoes", ClientController, :create_transaction)
+    get("/clientes/:id/extrato", ClientController, :show_last_statements)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

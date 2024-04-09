@@ -1,55 +1,6 @@
 version: "3.5"
 
 services:
-  api01: &api
-    image: gusanthiago/rinha-2024q1-crebito
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    command: /bin/sh docker_start.sh
-    hostname: api01
-    environment:
-      - PHX_HOST=api01
-      - SECRET_KEY_BASE="dMo+DIiSUeMONGfE/xQWNmjXQTpIn4jC4CcIQbHUV4zGurUD5J/imrzuxLkMCXGT"
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/rinha_backend_dev
-    ports:
-      - "4001:4000"
-    depends_on:
-      - db
-    deploy:
-      resources:
-        limits:
-          cpus: "0.55"
-          memory: "200MB"
-
-  api02:
-    <<: *api
-    hostname: api02
-    ports:
-      - "4002:4000"
-    environment:
-      - PHX_HOST=api02
-      - SECRET_KEY_BASE="dMo+DIiSUeMONGfE/xQWNmjXQTpIn4jC4CcIQbHUV4zGurUD5J/imrzuxLkMCXGT"
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/rinha_backend
-    depends_on:
-      - db
-
-  
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api01
-      - api02
-    ports:
-      - "9999:9999"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: "10MB"
-
   db:
     image: postgres:latest
     hostname: db
